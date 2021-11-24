@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate magic_crypt;
 extern crate passwords;
+
 use magic_crypt::MagicCryptTrait;
 use passwords::analyzer;
 use passwords::scorer;
@@ -45,7 +46,7 @@ fn main() {
                 }
 
                 println!("Welcome back!");
-                println!("> Supported commands are:\n- add [acccount-name] [password]\n- remove [account-name]\n- add [account-name]\n- get [account-name]\n- get all\n- quit");
+                println!("> Supported commands are:\n- add [acccount-name] [password]\n- add [account-name]\n- remove [account-name]\n- get [account-name]\n- get all\n- quit");
             }
 
             None => {
