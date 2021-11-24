@@ -7,21 +7,9 @@ use passwords::scorer;
 use passwords::PasswordGenerator;
 use std::path::Path;
 use std::collections::HashMap;
-use std::fs;
 use std::io::Write;
 
-fn load_data(database: &str) -> HashMap<String, String> {
-    let db_file = ["./", database, ".json"].join("");
-    let data: String = fs::read_to_string(db_file).unwrap_or_else(|_| "{}".to_string());
-    serde_json::from_str(&data).unwrap_or_default()
-}
-
-fn save_data(database: &str, data: &HashMap<String, String>) -> std::io::Result<()> {
-    let db_file = ["./", database, ".json"].join("");    
-    let save = serde_json::to_string(&data).unwrap();
-    fs::write(db_file, save)?;
-    Ok(())
-}
+mod data;
 
 fn main() {
     // Get arguments
@@ -36,7 +24,7 @@ fn main() {
         std::io::stdout().flush().unwrap();
         std::io::stdin().read_line(&mut password).unwrap();
 
-        db = load_data(&args[1]);
+        db = data::load_data(&args[1]);
         if db.is_empty() {
             println!("!! No database found for passwords!");
             std::process::exit(-1);
@@ -85,7 +73,7 @@ fn main() {
         let mut temp = HashMap::<String, String>::new();
         temp.insert(key, val);
 
-        match save_data(&db_file, &temp) {
+        match data::save_data(&db_file, &temp) {
             Err(e) => {
                 println!("!! Unable to create file: {}\nexiting...", e);
                 std::process::exit(-1);
@@ -147,7 +135,7 @@ fn main() {
                 }
 
                 // save the data to file
-                match save_data(&args[1], &db) {
+                match data::save_data(&args[1], &db) {
                     Err(e) => println!("!! Error in saving data: {}", e),
                     Ok(()) => {
                         println!("> Successfully added.");
@@ -171,7 +159,7 @@ fn main() {
                         db.remove(&mcrypt.encrypt_str_to_base64(tokens[1]));
 
                         // save the data to file
-                        match save_data(&args[1], &db) {
+                        match data::save_data(&args[1], &db) {
                             Err(e) => println!("!! Error in saving data: {}", e),
                             Ok(()) => {
                                 println!("> Successfully removed.");
