@@ -5,19 +5,19 @@ use magic_crypt::MagicCryptTrait;
 use passwords::analyzer;
 use passwords::scorer;
 use passwords::PasswordGenerator;
+use std::path::Path;
 use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
 
 fn load_data(database: &str) -> HashMap<String, String> {
     let db_file = ["./", database, ".json"].join("");
-    println!("{}", db_file);
     let data: String = fs::read_to_string(db_file).unwrap_or_else(|_| "{}".to_string());
     serde_json::from_str(&data).unwrap_or_default()
 }
 
 fn save_data(database: &str, data: &HashMap<String, String>) -> std::io::Result<()> {
-    let db_file = ["./", database, ".json"].join("");
+    let db_file = ["./", database, ".json"].join("");    
     let save = serde_json::to_string(&data).unwrap();
     fs::write(db_file, save)?;
     Ok(())
@@ -57,7 +57,7 @@ fn main() {
                 }
 
                 println!("Welcome back!");
-                println!("> Supported commands are:\n- add [acccount-name] [password]\n- add [account-name]\n- get [account-name]\n- get all\n- quit");
+                println!("> Supported commands are:\n- add [acccount-name] [password]\n- remove [account-name]\n- add [account-name]\n- get [account-name]\n- get all\n- quit");
             }
 
             None => {
@@ -66,6 +66,11 @@ fn main() {
             }
         }
     } else if args.len() == 3 && args[1] == "init" {
+        let db_file = ["./", &args[2], ".json"].join("");
+        if Path::new(&db_file).exists() {
+            return println!("!! This database already exists.")
+        }
+
         print!("Password to use: ");
         std::io::stdout().flush().unwrap();
         std::io::stdin().read_line(&mut password).unwrap();
@@ -80,7 +85,7 @@ fn main() {
         let mut temp = HashMap::<String, String>::new();
         temp.insert(key, val);
 
-        match save_data(&args[2], &temp) {
+        match save_data(&db_file, &temp) {
             Err(e) => {
                 println!("!! Unable to create file: {}\nexiting...", e);
                 std::process::exit(-1);
@@ -135,7 +140,7 @@ fn main() {
                                 mcrypt.encrypt_str_to_base64(tokens[2]),
                             );
                         } else {
-                            println!("> Password is not saved.");
+                            println!("!! Password is not saved.");
                             continue;
                         }
                     }
@@ -201,7 +206,7 @@ fn main() {
 
             "quit" => std::process::exit(0),
 
-            _ => println!("> Supported commands are:\n- add [acccount-name] [password]\n- add [account-name]\n- get [account-name]\n- get all\n- quit"),
+            _ => println!("> Supported commands are:\n- add [acccount-name] [password]\n- add [account-name]\n- remove [account-name]\n- get [account-name]\n- get all\n- quit"),
         }
     }
 }
