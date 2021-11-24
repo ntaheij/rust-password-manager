@@ -140,7 +140,7 @@ fn main() {
                                 mcrypt.encrypt_str_to_base64(tokens[2]),
                             );
                         } else {
-                            println!("!! Password is not saved.");
+                            println!("> Password was not saved.");
                             continue;
                         }
                     }
@@ -148,12 +148,42 @@ fn main() {
 
                 // save the data to file
                 match save_data(&args[1], &db) {
-                    Err(e) => println!("!! Error in saving data : {}", e),
+                    Err(e) => println!("!! Error in saving data: {}", e),
                     Ok(()) => {
                         println!("> Successfully added.");
                     }
                 }
             }
+
+            "remove" => {
+                if tokens.len() != 2 {
+                    println!("!! Correct usage: remove [account-name]");
+                    continue;
+                } else {
+                    println!("> Are you sure you want to remove the entry for {}? y/n", tokens[1]);
+
+                    let mut line: String = String::new();
+                    std::io::stdin().read_line(&mut line).unwrap_or(0);
+                    let tok: Vec<_> = line.trim().split(' ').collect();
+                    let choice = tok[0].to_lowercase();
+
+                    if choice == "y" || choice == "Y" || choice == "yes" {
+                        db.remove(&mcrypt.encrypt_str_to_base64(tokens[1]));
+
+                        // save the data to file
+                        match save_data(&args[1], &db) {
+                            Err(e) => println!("!! Error in saving data: {}", e),
+                            Ok(()) => {
+                                println!("> Successfully removed.");
+                            }
+                        }
+                    } else {
+                        println!("> Password was not deleted.");
+                        continue;
+                    }
+                }
+            }
+
             "get" => {
                 if tokens.len() != 2 {
                     println!("!! Correct usage: get [account-name/all]");
@@ -165,7 +195,7 @@ fn main() {
                             // Get all
                             // For getting all accounts and passwords
                             if db.iter().len() <= 1 {
-                                println!("No passwords found")
+                                println!("No passwords found.")
                             }
 
                             for (key, val) in db.iter() {
