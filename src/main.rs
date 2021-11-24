@@ -9,14 +9,17 @@ use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
 
-fn load_data() -> HashMap<String, String> {
-    let data: String = fs::read_to_string("./db.json").unwrap_or_else(|_| "{}".to_string());
+fn load_data(database: &str) -> HashMap<String, String> {
+    let db_file = ["./", database, ".json"].join("");
+    println!("{}", db_file);
+    let data: String = fs::read_to_string(db_file).unwrap_or_else(|_| "{}".to_string());
     serde_json::from_str(&data).unwrap_or_default()
 }
 
-fn save_data(data: &HashMap<String, String>) -> std::io::Result<()> {
+fn save_data(database: &str, data: &HashMap<String, String>) -> std::io::Result<()> {
+    let db_file = ["./", database, ".json"].join("");
     let save = serde_json::to_string(&data).unwrap();
-    fs::write("./db.json", save)?;
+    fs::write(db_file, save)?;
     Ok(())
 }
 
@@ -28,12 +31,12 @@ fn main() {
     let mut password = String::new();
     let mut db: HashMap<String, String>;
 
-    if args.len() == 1 {
+    if args.len() == 2 && args[1] != "init" {
         print!("Password: "); 
         std::io::stdout().flush().unwrap();
         std::io::stdin().read_line(&mut password).unwrap();
 
-        db = load_data();
+        db = load_data(&args[1]);
         if db.is_empty() {
             println!("!! No database found for passwords!");
             std::process::exit(-1);
@@ -62,7 +65,7 @@ fn main() {
                 std::process::exit(-1);
             }
         }
-    } else if args.len() == 2 && args[1] == "init" {
+    } else if args.len() == 3 && args[1] == "init" {
         print!("Password to use: ");
         std::io::stdout().flush().unwrap();
         std::io::stdin().read_line(&mut password).unwrap();
@@ -77,7 +80,7 @@ fn main() {
         let mut temp = HashMap::<String, String>::new();
         temp.insert(key, val);
 
-        match save_data(&temp) {
+        match save_data(&args[2], &temp) {
             Err(e) => {
                 println!("!! Unable to create file: {}\nexiting...", e);
                 std::process::exit(-1);
@@ -85,7 +88,7 @@ fn main() {
             _ => std::process::exit(0),
         }
     } else {
-        println!("!! Incorrect usage.\nSyntax: {:?} [init]", args[0]);
+        println!("!! Incorrect usage.\nSyntax: {:?} [init] (db_name)", args[0]);
         std::process::exit(-1);
     }
 
@@ -139,7 +142,7 @@ fn main() {
                 }
 
                 // save the data to file
-                match save_data(&db) {
+                match save_data(&args[1], &db) {
                     Err(e) => println!("!! Error in saving data : {}", e),
                     Ok(()) => {
                         println!("> Successfully added.");
@@ -156,6 +159,10 @@ fn main() {
                         "all" => {
                             // Get all
                             // For getting all accounts and passwords
+                            if db.iter().len() <= 1 {
+                                println!("No passwords found")
+                            }
+
                             for (key, val) in db.iter() {
                                 let acc = mcrypt
                                     .decrypt_base64_to_string(key)
@@ -169,7 +176,7 @@ fn main() {
                                 let pass = mcrypt
                                     .decrypt_base64_to_string(val)
                                     .unwrap_or_else(|_| "!! Error in decryption".to_string());
-                                println!("{} : {}", acc, pass);
+                                println!("{}: {}", acc, pass);
                             }
                         }
                         _ => {
